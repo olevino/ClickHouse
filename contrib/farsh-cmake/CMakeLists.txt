@@ -6,5 +6,5 @@ set(SRCS
         )
 
 add_library(farsh ${SRCS})
-target_include_directories (farsh BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories (farsh BEFORE PUBLIC ${LIBRARY_DIR})
 add_library(ch_contrib::farsh ALIAS farsh)

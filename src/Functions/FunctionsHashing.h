@@ -1381,8 +1381,13 @@ struct ImplFarshHash32
     }
     static UInt32 combineHashes(UInt32 h1, UInt32 h2)
     {
-        UInt64 block = static_cast<UInt64>(h1) << 32 + h2;
-        return apply(static_cast<char*>(block));
+        union
+        {
+            UInt64 u64;
+            char chars[8];
+        };
+        u64 = (static_cast<UInt64>(h1) << 32) + h2;
+        return apply(chars, 8);
     }
 
     static constexpr bool use_int_hash_for_pods = false;

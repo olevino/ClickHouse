@@ -1375,9 +1375,9 @@ struct ImplFarshHash32
     static constexpr auto name = "farshHash32";
     using ReturnType = UInt32;
 
-    static UInt32 apply(const char * s, const size_t len, const UInt64 seed = 0)
+    static UInt32 apply(const char * s, const size_t len)
     {
-        return farsh(s, len, seed);
+        return farsh(s, len, 0);
     }
     static UInt32 combineHashes(UInt32 h1, UInt32 h2)
     {

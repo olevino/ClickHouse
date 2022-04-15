@@ -1377,7 +1377,8 @@ struct ImplFarshHash32
 
     static UInt32 apply(const char * s, const size_t len)
     {
-        return farsh(s, len, 0);
+//        return farsh(s, len, 0);
+        return 0;
     }
     static UInt32 combineHashes(UInt32 h1, UInt32 h2)
     {

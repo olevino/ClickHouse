@@ -2,7 +2,7 @@
 
 #include <city.h>
 #include <farmhash.h>
-#include <farsh/farsh.h>
+#include <farsh.h>
 #include <metrohash.h>
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>

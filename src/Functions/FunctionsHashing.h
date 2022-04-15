@@ -1375,10 +1375,14 @@ struct ImplFarshHash32
     static constexpr auto name = "farshHash32";
     using ReturnType = UInt32;
 
-    static auto combineHashes(UInt32 h1, UInt32 h2) { return CityHash_v1_0_2::Hash64to32(UInt64_t(h1, h2)); }
-    static auto apply(const char * s, const size_t len, const UInt64 seed = 0)
+    static UInt32 apply(const char * s, const size_t len, const UInt64 seed = 0)
     {
         return farsh(s, len, seed);
+    }
+    static UInt32 combineHashes(UInt32 h1, UInt32 h2)
+    {
+        UInt64 block = static_cast<UInt64>(h1) << 32 + h2;
+        return apply(static_cast<char*>(block));
     }
 
     static constexpr bool use_int_hash_for_pods = false;

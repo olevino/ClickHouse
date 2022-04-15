@@ -1370,6 +1370,7 @@ private:
     }
 };
 
+extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
 struct ImplFarshHash32
 {
     static constexpr auto name = "farshHash32";

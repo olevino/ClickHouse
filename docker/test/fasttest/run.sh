@@ -180,6 +180,7 @@ function clone_submodules
             contrib/aquahash
             contrib/highwayhash
             contrib/meowhash
+            contrib/wyhash
         )
 
         git submodule sync

@@ -274,3 +274,6 @@
 [submodule "contrib/meowhash"]
 	path = contrib/meowhash
 	url = https://github.com/cmuratori/meow_hash.git
+[submodule "contrib/wyhash"]
+	path = contrib/wyhash
+	url = https://github.com/wangyi-fudan/wyhash.git

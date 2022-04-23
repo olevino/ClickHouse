@@ -177,6 +177,7 @@ function clone_submodules
             contrib/jemalloc
             contrib/replxx
             contrib/farsh
+            contrib/aquahash
         )
 
         git submodule sync

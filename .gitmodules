@@ -265,3 +265,6 @@
 [submodule "contrib/farsh"]
 	path = contrib/farsh
 	url = https://github.com/Bulat-Ziganshin/FARSH.git
+[submodule "contrib/aquahash"]
+	path = contrib/aquahash
+	url = https://github.com/jandrewrogers/AquaHash.git

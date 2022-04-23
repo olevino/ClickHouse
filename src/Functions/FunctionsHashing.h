@@ -7,13 +7,19 @@
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>
 
+
 #include "config_functions.h"
 #include "config_core.h"
 
 #include <Common/SipHash.h>
 #include <Common/typeid_cast.h>
 #include <Common/HashTable/Hash.h>
+#include <Common/CpuId.h>
 #include <xxhash.h>
+
+#if USE_AQUAHASH
+#    include <aquahash.h>
+#endif
 
 #if USE_SSL
 #    include <openssl/md4.h>
@@ -1370,6 +1376,7 @@ private:
     }
 };
 
+
 extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
 struct ImplFarshHash32
 {
@@ -1393,6 +1400,43 @@ struct ImplFarshHash32
 
     static constexpr bool use_int_hash_for_pods = false;
 };
+
+#if USE_AQUAHASH
+struct ImplAquaHash128
+{
+    static constexpr auto name = "aquaHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+
+        if (!DB::Cpu::CpuFlagsCache::have_AES)
+        {
+            throw Exception("Aquahash is not available in system without AES", ErrorCodes::NOT_IMPLEMENTED);
+        }
+
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = AquaHash::Hash(reinterpret_cast<const uint8_t*>(s), len);
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+#endif
 
 struct NameIntHash32 { static constexpr auto name = "intHash32"; };
 struct NameIntHash64 { static constexpr auto name = "intHash64"; };
@@ -1431,5 +1475,9 @@ using FunctionFarshHash32 = FunctionAnyHash<ImplFarshHash32>;
 
 using FunctionXxHash32 = FunctionAnyHash<ImplXxHash32>;
 using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;
+
+#if USE_AQUAHASH
+using FunctionAquaHash128 = FunctionAnyHash<ImplAquaHash128>;
+#endif
 
 }

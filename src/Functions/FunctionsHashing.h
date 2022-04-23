@@ -7,6 +7,7 @@
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>
 #include <highwayhash/highwayhash.h>
+#include <meow_hash_x64_aesni.h>
 
 #include "config_functions.h"
 #include "config_core.h"
@@ -1376,6 +1377,36 @@ private:
     }
 };
 
+struct ImplMeowHash128
+{
+    static constexpr auto name = "meowHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+        char* s_dup = strdup(s);
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = MeowHash(MeowDefaultSeed, len, s_dup);
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
 template <typename Result>
 void highwayhash(const char * s, size_t len, Result* result)
 {
@@ -1580,5 +1611,7 @@ using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;
 #if USE_AQUAHASH
 using FunctionAquaHash128 = FunctionAnyHash<ImplAquaHash128>;
 #endif
+
+using FunctionMeowHash128 = FunctionAnyHash<ImplMeowHash128>;
 
 }

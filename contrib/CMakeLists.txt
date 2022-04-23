@@ -95,6 +95,7 @@ if (ENABLE_FUZZING)
 endif()
 
 add_contrib (highwayhash-cmake highwayhash)
+add_contrib (meowhash-cmake meowhash)
 add_contrib (cityhash102)
 add_contrib (libfarmhash)
 add_contrib (icu-cmake icu)

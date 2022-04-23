@@ -271,3 +271,6 @@
 [submodule "contrib/highwayhash"]
 	path = contrib/highwayhash
 	url = https://github.com/google/highwayhash.git
+[submodule "contrib/meowhash"]
+	path = contrib/meowhash
+	url = https://github.com/cmuratori/meow_hash.git

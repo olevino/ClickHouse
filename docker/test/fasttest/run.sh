@@ -179,6 +179,7 @@ function clone_submodules
             contrib/farsh
             contrib/aquahash
             contrib/highwayhash
+            contrib/meowhash
         )
 
         git submodule sync

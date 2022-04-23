@@ -17,6 +17,7 @@ target_link_libraries(clickhouse_functions
         ch_contrib::farsh
         ch_contrib::highwayhash
         ch_contrib::wyhash
+        ch_contrib::t1ha
         ch_contrib::cityhash
         ch_contrib::farmhash
         clickhouse_dictionaries

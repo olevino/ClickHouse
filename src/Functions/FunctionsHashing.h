@@ -2,12 +2,13 @@
 
 #include <city.h>
 #include <farmhash.h>
-#include <farsh.h>
 #include <metrohash.h>
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>
+#include <farsh.h>
 #include <highwayhash/highwayhash.h>
 #include <meow_hash_x64_aesni.h>
+#include <t1ha.h>
 #include <wyhash.h>
 
 #include "config_functions.h"
@@ -1378,6 +1379,30 @@ private:
     }
 };
 
+struct ImplT1haHash64
+{
+    static constexpr auto name = "t1haHash64";
+    using ReturnType = UInt64;
+
+    static UInt64 apply(const char * s, const size_t len)
+    {
+        return t1ha(s, len, 0);
+    }
+    static UInt64 combineHashes(UInt64 h1, UInt64 h2)
+    {
+        union
+        {
+            UInt64 u64[2];
+            char chars[16];
+        };
+        u64[0] = h1;
+        u64[1] = h2;
+        return apply(chars, 16);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
 struct ImplWyHash64
 {
     static constexpr auto name = "wyHash64";
@@ -1624,20 +1649,18 @@ using FunctionJavaHash = FunctionAnyHash<JavaHashImpl>;
 using FunctionJavaHashUTF16LE = FunctionAnyHash<JavaHashUTF16LEImpl>;
 using FunctionHiveHash = FunctionAnyHash<HiveHashImpl>;
 
+using FunctionXxHash32 = FunctionAnyHash<ImplXxHash32>;
+using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;
+
 using FunctionFarshHash32 = FunctionAnyHash<ImplFarshHash32>;
 using FunctionHighwayHash64 = FunctionAnyHash<ImplHighwayHash64>;
 using FunctionHighwayHash128 = FunctionAnyHash<ImplHighwayHash128>;
 using FunctionHighwayHash256 = FunctionAnyHash<ImplHighwayHash256>;
-
-using FunctionXxHash32 = FunctionAnyHash<ImplXxHash32>;
-using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;
-
+using FunctionT1haHash64 = FunctionAnyHash<ImplT1haHash64>;
 using FunctionWyHash64 = FunctionAnyHash<ImplWyHash64>;
-
 #if USE_AQUAHASH
 using FunctionAquaHash128 = FunctionAnyHash<ImplAquaHash128>;
 #endif
-
 using FunctionMeowHash128 = FunctionAnyHash<ImplMeowHash128>;
 
 }

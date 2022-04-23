@@ -181,10 +181,11 @@ function clone_submodules
             contrib/highwayhash
             contrib/meowhash
             contrib/wyhash
+            contrib/t1ha
         )
 
         git submodule sync
-        git submodule update --depth 1 --init "${SUBMODULES_TO_UPDATE[@]}"
+        git submodule update --jobs=16 --depth 1 --init "${SUBMODULES_TO_UPDATE[@]}"
         git submodule foreach git reset --hard
         git submodule foreach git checkout @ -f
         git submodule foreach git clean -xfd

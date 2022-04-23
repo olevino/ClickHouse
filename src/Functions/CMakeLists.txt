@@ -14,6 +14,7 @@ add_library(clickhouse_functions ${clickhouse_functions_sources})
 target_link_libraries(clickhouse_functions
     PUBLIC
         ch_contrib::farsh
+        ch_contrib::highwayhash
         ch_contrib::cityhash
         ch_contrib::farmhash
         clickhouse_dictionaries

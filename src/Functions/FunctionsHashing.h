@@ -6,7 +6,7 @@
 #include <metrohash.h>
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>
-
+#include <highwayhash/highwayhash.h>
 
 #include "config_functions.h"
 #include "config_core.h"
@@ -1376,6 +1376,104 @@ private:
     }
 };
 
+template <typename Result>
+void highwayhash(const char * s, size_t len, Result* result)
+{
+    using namespace highwayhash;
+    const HHKey key HH_ALIGNAS(32) = {1, 2, 3, 4};
+#ifdef __AVX2__
+    HHStateT<4> state(key);
+#elif defined(__SSE4_1__)
+    HHStateT<2> state(key);
+#else
+    HHStateT<1> state(key);
+#endif
+    HighwayHashT(&state, s, len, result);
+}
+
+struct ImplHighwayHash64
+{
+    static constexpr auto name = "highwayHash64";
+    using ReturnType = UInt64;
+
+    static UInt64 apply(const char *s, const size_t len)
+    {
+        UInt64 result;
+        highwayhash<highwayhash::HHResult64>(s, len, &result);  // actually, HHResult64 is UInt64
+        return result;
+    }
+
+    static UInt64 combineHashes(UInt64 h1, UInt64 h2)
+    {
+        union {
+            UInt64 u64[2];
+            char chars[16];
+        };
+        u64[0] = h1;
+        u64[1] = h2;
+        return apply(chars, 16);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+struct ImplHighwayHash128
+{
+    static constexpr auto name = "highwayHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+        union {
+            UInt64 u64[2];
+            UInt128 u128;
+        };
+        highwayhash<highwayhash::HHResult128>(s, len, &u64);  // actually, HHResult128 is UInt64[2]
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+struct ImplHighwayHash256
+{
+    static constexpr auto name = "highwayHash256";
+    using ReturnType = UInt256;
+
+    static UInt256 apply(const char *s, const size_t len)
+    {
+        union {
+            UInt64 u64[4];
+            UInt256 u256;
+        };
+        highwayhash<highwayhash::HHResult256>(s, len, &u64);  // actually, HHResult256 is UInt64[4]
+        return u256;
+    }
+
+    static UInt256 combineHashes(UInt256 h1, UInt256 h2)
+    {
+        union {
+            UInt256 u256[2];
+            char chars[64];
+        };
+        u256[0] = h1;
+        u256[1] = h2;
+        return apply(chars, 64);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
 
 extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
 struct ImplFarshHash32
@@ -1472,6 +1570,9 @@ using FunctionJavaHashUTF16LE = FunctionAnyHash<JavaHashUTF16LEImpl>;
 using FunctionHiveHash = FunctionAnyHash<HiveHashImpl>;
 
 using FunctionFarshHash32 = FunctionAnyHash<ImplFarshHash32>;
+using FunctionHighwayHash64 = FunctionAnyHash<ImplHighwayHash64>;
+using FunctionHighwayHash128 = FunctionAnyHash<ImplHighwayHash128>;
+using FunctionHighwayHash256 = FunctionAnyHash<ImplHighwayHash256>;
 
 using FunctionXxHash32 = FunctionAnyHash<ImplXxHash32>;
 using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;

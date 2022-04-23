@@ -43,5 +43,8 @@ void registerFunctionsHashing(FunctionFactory & factory)
 #if USE_AQUAHASH
     factory.registerFunction<FunctionAquaHash128>();
 #endif
+    factory.registerFunction<FunctionHighwayHash64>();
+    factory.registerFunction<FunctionHighwayHash128>();
+    factory.registerFunction<FunctionHighwayHash256>();
 }
 }

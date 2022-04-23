@@ -268,3 +268,6 @@
 [submodule "contrib/aquahash"]
 	path = contrib/aquahash
 	url = https://github.com/jandrewrogers/AquaHash.git
+[submodule "contrib/highwayhash"]
+	path = contrib/highwayhash
+	url = https://github.com/google/highwayhash.git

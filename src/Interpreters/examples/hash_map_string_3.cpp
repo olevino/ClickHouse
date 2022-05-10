@@ -24,7 +24,6 @@
 #include <base/StringRef.h>
 #include <Common/HashTable/HashMap.h>
 #include <Interpreters/AggregationCommon.h>
-#include <Functions/FunctionsHashing.h>
 
 #ifdef __SSE4_2__
     #include <smmintrin.h>

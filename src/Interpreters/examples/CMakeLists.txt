@@ -14,7 +14,17 @@ add_executable (hash_map_string_2 hash_map_string_2.cpp)
 target_link_libraries (hash_map_string_2 PRIVATE dbms)
 
 add_executable (hash_map_string_3 hash_map_string_3.cpp)
-target_link_libraries (hash_map_string_3 PRIVATE dbms ch_contrib::farmhash ch_contrib::metrohash clickhouse_functions)
+target_link_libraries (hash_map_string_3 PRIVATE
+        dbms
+        ch_contrib::farmhash
+        ch_contrib::metrohash
+        ch_contrib::t1ha
+        ch_contrib::farsh
+        ch_contrib::meowhash
+        ch_contrib::wyhash
+        ch_contrib::highwayhash
+        ch_contrib::aquahash
+        )
 
 add_executable (hash_map_string_small hash_map_string_small.cpp)
 target_link_libraries (hash_map_string_small PRIVATE dbms ch_contrib::sparsehash)

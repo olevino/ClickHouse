@@ -7,6 +7,13 @@
 #include <farmhash.h>
 #include <metrohash.h>
 
+#include <farsh.h>
+#include <highwayhash/highwayhash.h>
+#include <meow_hash_x64_aesni.h>
+#include <t1ha.h>
+#include <wyhash.h>
+#include <aquahash.h>
+
 #define DBMS_HASH_MAP_COUNT_COLLISIONS
 #define DBMS_HASH_MAP_DEBUG_RESIZES
 
@@ -462,10 +469,103 @@ struct t1haHash64
 {
     UInt64 operator() (StringRef x) const
     {
-        return DB::ImplT1haHash64::apply(x.data, x.size);
+        return t1ha(x.data, x.size, 0);
     }
 };
 
+struct wyHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        return wyhash(x.data, x.size, 0, _wyp);
+    }
+};
+
+struct meowHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = MeowHash(MeowDefaultSeed, x.size, const_cast<char *>(x.data));
+        return u128;
+    }
+};
+
+template <typename Result>
+void highwayhash(const char * s, size_t len, Result* result)
+{
+    using namespace highwayhash;
+    const HHKey key HH_ALIGNAS(32) = {1, 2, 3, 4};
+#ifdef __AVX2__
+    HHStateT<4> state(key);
+#elif defined(__SSE4_1__)
+    HHStateT<2> state(key);
+#else
+    HHStateT<1> state(key);
+#endif
+    HighwayHashT(&state, s, len, result);
+}
+
+struct highwayHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        UInt64 result;
+        highwayhash<highwayhash::HHResult64>(x.data, x.size, &result);  // actually, HHResult64 is UInt64
+        return result;
+    }
+};
+
+struct highwayHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            UInt64 u64[2];
+            UInt128 u128;
+        };
+        highwayhash<highwayhash::HHResult128>(x.data, x.size, &u64);  // actually, HHResult128 is UInt64[2]
+        return u128;
+    }
+};
+
+struct highwayHash256
+{
+    UInt256 operator() (StringRef x) const
+    {
+        union {
+            UInt64 u64[4];
+            UInt256 u256;
+        };
+        highwayhash<highwayhash::HHResult256>(x.data, x.size, &u64);  // actually, HHResult256 is UInt64[4]
+        return u256;
+    }
+};
+
+extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
+struct farshHash32
+{
+    UInt32 operator() (StringRef x) const
+    {
+        return farsh(x.data, x.size, 0);
+    }
+};
+
+struct aquaHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = AquaHash::Hash(reinterpret_cast<const uint8_t*>(x.data), x.size);
+        return u128;
+    }
+};
 
 int main(int argc, char ** argv)
 {
@@ -504,6 +604,14 @@ int main(int argc, char ** argv)
     }
 
     if (!m || m == 1) bench<StringRef, t1haHash64>(data, "StringRef_t1haHash64");
+    if (!m || m == 2) bench<StringRef, farshHash32>(data, "StringRef_farshHash32");
+    if (!m || m == 3) bench<StringRef, meowHash128>(data, "StringRef_meowHash128");
+    if (!m || m == 4) bench<StringRef, highwayHash64>(data, "StringRef_highwayHash64");
+    if (!m || m == 5) bench<StringRef, highwayHash128>(data, "StringRef_highwayHash128");
+    if (!m || m == 6) bench<StringRef, highwayHash256>(data, "StringRef_highwayHash256");
+    if (!m || m == 7) bench<StringRef, wyHash64>(data, "StringRef_wyHash64");
+    if (!m || m == 8) bench<StringRef, aquaHash128>(data, "StringRef_aquaHash128");
+
 //    if (!m || m == 1) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
 //    if (!m || m == 2) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
 //    if (!m || m == 3) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");

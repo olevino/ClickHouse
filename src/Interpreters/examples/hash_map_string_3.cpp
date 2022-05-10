@@ -7,7 +7,9 @@
 #include <farmhash.h>
 #include <metrohash.h>
 
+extern "C" {
 #include <farsh.h>
+}
 #include <highwayhash/highwayhash.h>
 #include <meow_hash_x64_aesni.h>
 #include <t1ha.h>

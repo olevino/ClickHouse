@@ -494,7 +494,7 @@ struct meowHash128
 };
 
 template <typename Result>
-void highwayhash(const char * s, size_t len, Result* result)
+void highwayhashImpl(const char * s, size_t len, Result* result)
 {
     using namespace highwayhash;
     const HHKey key HH_ALIGNAS(32) = {1, 2, 3, 4};
@@ -513,7 +513,7 @@ struct highwayHash64
     UInt64 operator() (StringRef x) const
     {
         UInt64 result;
-        highwayhash<highwayhash::HHResult64>(x.data, x.size, &result);  // actually, HHResult64 is UInt64
+        highwayhashImpl<highwayhash::HHResult64>(x.data, x.size, &result);  // actually, HHResult64 is UInt64
         return result;
     }
 };
@@ -526,7 +526,7 @@ struct highwayHash128
             UInt64 u64[2];
             UInt128 u128;
         };
-        highwayhash<highwayhash::HHResult128>(x.data, x.size, &u64);  // actually, HHResult128 is UInt64[2]
+        highwayhashImpl<highwayhash::HHResult128>(x.data, x.size, &u64);  // actually, HHResult128 is UInt64[2]
         return u128;
     }
 };
@@ -539,7 +539,7 @@ struct highwayHash256
             UInt64 u64[4];
             UInt256 u256;
         };
-        highwayhash<highwayhash::HHResult256>(x.data, x.size, &u64);  // actually, HHResult256 is UInt64[4]
+        highwayhashImpl<highwayhash::HHResult256>(x.data, x.size, &u64);  // actually, HHResult256 is UInt64[4]
         return u256;
     }
 };

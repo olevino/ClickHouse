@@ -17,6 +17,7 @@
 #include <base/StringRef.h>
 #include <Common/HashTable/HashMap.h>
 #include <Interpreters/AggregationCommon.h>
+#include <Functions/FunctionsHashing.h>
 
 #ifdef __SSE4_2__
     #include <smmintrin.h>
@@ -457,6 +458,14 @@ void NO_INLINE bench(const std::vector<StringRef> & data, const char * name)
         << std::endl;
 }
 
+struct t1haHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        return DB::ImplT1haHash64::apply(x.data, x.size);
+    }
+};
+
 
 int main(int argc, char ** argv)
 {
@@ -494,21 +503,22 @@ int main(int argc, char ** argv)
             << std::endl;
     }
 
-    if (!m || m == 1) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
-    if (!m || m == 2) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
-    if (!m || m == 3) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
-    if (!m || m == 4) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
-
-#ifdef __SSE4_2__
-    if (!m || m == 5) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
-    if (!m || m == 6) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
-    if (!m || m == 7) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
-#endif
-
-    if (!m || m == 8) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
-    if (!m || m == 9) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
-    if (!m || m == 10) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
-    if (!m || m == 11) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
+    if (!m || m == 1) bench<StringRef, t1haHash64>(data, "StringRef_t1haHash64");
+//    if (!m || m == 1) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
+//    if (!m || m == 2) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
+//    if (!m || m == 3) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
+//    if (!m || m == 4) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
+//
+//#ifdef __SSE4_2__
+//    if (!m || m == 5) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
+//    if (!m || m == 6) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
+//    if (!m || m == 7) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
+//#endif
+//
+//    if (!m || m == 8) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
+//    if (!m || m == 9) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
+//    if (!m || m == 10) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
+//    if (!m || m == 11) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
 
     return 0;
 }

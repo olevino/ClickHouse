@@ -544,7 +544,6 @@ struct highwayHash256
     }
 };
 
-extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
 struct farshHash32
 {
     UInt32 operator() (StringRef x) const

@@ -182,6 +182,7 @@ function clone_submodules
             contrib/meowhash
             contrib/wyhash
             contrib/t1ha
+            contrib/eigen
         )
 
         git submodule sync

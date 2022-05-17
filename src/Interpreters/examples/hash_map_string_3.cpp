@@ -7,6 +7,15 @@
 #include <farmhash.h>
 #include <metrohash.h>
 
+extern "C" {
+#include <farsh.h>
+}
+#include <highwayhash/highwayhash.h>
+#include <meow_hash_x64_aesni.h>
+#include <t1ha.h>
+#include <wyhash.h>
+#include <aquahash.h>
+
 #define DBMS_HASH_MAP_COUNT_COLLISIONS
 #define DBMS_HASH_MAP_DEBUG_RESIZES
 
@@ -457,6 +466,106 @@ void NO_INLINE bench(const std::vector<StringRef> & data, const char * name)
         << std::endl;
 }
 
+struct t1haHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        return t1ha(x.data, x.size, 0);
+    }
+};
+
+struct wyHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        return wyhash(x.data, x.size, 0, _wyp);
+    }
+};
+
+struct meowHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = MeowHash(MeowDefaultSeed, x.size, const_cast<char *>(x.data));
+        return u128;
+    }
+};
+
+template <typename Result>
+void highwayhashImpl(const char * s, size_t len, Result* result)
+{
+    using namespace highwayhash;
+    const HHKey key HH_ALIGNAS(32) = {1, 2, 3, 4};
+#ifdef __AVX2__
+    HHStateT<4> state(key);
+#elif defined(__SSE4_1__)
+    HHStateT<2> state(key);
+#else
+    HHStateT<1> state(key);
+#endif
+    HighwayHashT(&state, s, len, result);
+}
+
+struct highwayHash64
+{
+    UInt64 operator() (StringRef x) const
+    {
+        UInt64 result;
+        highwayhashImpl<highwayhash::HHResult64>(x.data, x.size, &result);  // actually, HHResult64 is UInt64
+        return result;
+    }
+};
+
+struct highwayHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            UInt64 u64[2];
+            UInt128 u128;
+        };
+        highwayhashImpl<highwayhash::HHResult128>(x.data, x.size, &u64);  // actually, HHResult128 is UInt64[2]
+        return u128;
+    }
+};
+
+struct highwayHash256
+{
+    UInt256 operator() (StringRef x) const
+    {
+        union {
+            UInt64 u64[4];
+            UInt256 u256;
+        };
+        highwayhashImpl<highwayhash::HHResult256>(x.data, x.size, &u64);  // actually, HHResult256 is UInt64[4]
+        return u256;
+    }
+};
+
+struct farshHash32
+{
+    UInt32 operator() (StringRef x) const
+    {
+        return farsh(x.data, x.size, 0);
+    }
+};
+
+struct aquaHash128
+{
+    UInt128 operator() (StringRef x) const
+    {
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = AquaHash::Hash(reinterpret_cast<const uint8_t*>(x.data), x.size);
+        return u128;
+    }
+};
 
 int main(int argc, char ** argv)
 {
@@ -494,21 +603,30 @@ int main(int argc, char ** argv)
             << std::endl;
     }
 
-    if (!m || m == 1) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
-    if (!m || m == 2) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
-    if (!m || m == 3) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
-    if (!m || m == 4) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
+    if (!m || m == 1) bench<StringRef, t1haHash64>(data, "StringRef_t1haHash64");
+    if (!m || m == 2) bench<StringRef, farshHash32>(data, "StringRef_farshHash32");
+    if (!m || m == 3) bench<StringRef, meowHash128>(data, "StringRef_meowHash128");
+    if (!m || m == 4) bench<StringRef, highwayHash64>(data, "StringRef_highwayHash64");
+    if (!m || m == 5) bench<StringRef, highwayHash128>(data, "StringRef_highwayHash128");
+    if (!m || m == 6) bench<StringRef, highwayHash256>(data, "StringRef_highwayHash256");
+    if (!m || m == 7) bench<StringRef, wyHash64>(data, "StringRef_wyHash64");
+    if (!m || m == 8) bench<StringRef, aquaHash128>(data, "StringRef_aquaHash128");
+
+    if (!m || m == 9) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
+    if (!m || m == 10) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
+    if (!m || m == 11) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
+    if (!m || m == 12) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
 
 #ifdef __SSE4_2__
-    if (!m || m == 5) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
-    if (!m || m == 6) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
-    if (!m || m == 7) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
+    if (!m || m == 13) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
+    if (!m || m == 14) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
+    if (!m || m == 15) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
 #endif
 
-    if (!m || m == 8) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
-    if (!m || m == 9) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
-    if (!m || m == 10) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
-    if (!m || m == 11) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
+    if (!m || m == 16) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
+    if (!m || m == 17) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
+    if (!m || m == 18) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
+    if (!m || m == 19) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
 
     return 0;
 }

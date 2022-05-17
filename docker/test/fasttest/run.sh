@@ -176,7 +176,12 @@ function clone_submodules
             contrib/NuRaft
             contrib/jemalloc
             contrib/replxx
+            contrib/farsh
+            contrib/aquahash
+            contrib/highwayhash
+            contrib/meowhash
             contrib/wyhash
+            contrib/t1ha
             contrib/eigen
         )
 

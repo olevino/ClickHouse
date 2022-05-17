@@ -13,7 +13,11 @@ add_library(clickhouse_functions ${clickhouse_functions_sources})
 
 target_link_libraries(clickhouse_functions
     PUBLIC
+        ch_contrib::meowhash
+        ch_contrib::farsh
+        ch_contrib::highwayhash
         ch_contrib::wyhash
+        ch_contrib::t1ha
         ch_contrib::cityhash
         ch_contrib::farmhash
         clickhouse_dictionaries
@@ -32,6 +36,10 @@ target_link_libraries(clickhouse_functions
 
 if (TARGET OpenSSL::Crypto)
     target_link_libraries(clickhouse_functions PUBLIC OpenSSL::Crypto)
+endif()
+
+if (USE_AQUAHASH)
+    target_link_libraries(clickhouse_functions PUBLIC ch_contrib::aquahash)
 endif()
 
 if (CMAKE_BUILD_TYPE_UC STREQUAL "RELEASE"

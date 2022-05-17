@@ -5,6 +5,10 @@
 #include <metrohash.h>
 #include <MurmurHash2.h>
 #include <MurmurHash3.h>
+#include <farsh.h>
+#include <highwayhash/highwayhash.h>
+#include <meow_hash_x64_aesni.h>
+#include <t1ha.h>
 #include <wyhash.h>
 
 #include "config_functions.h"
@@ -13,7 +17,12 @@
 #include <Common/SipHash.h>
 #include <Common/typeid_cast.h>
 #include <Common/HashTable/Hash.h>
+#include <Common/CpuId.h>
 #include <xxhash.h>
+
+#if USE_AQUAHASH
+#    include <aquahash.h>
+#endif
 
 #if USE_SSL
 #    include <openssl/md4.h>
@@ -1370,6 +1379,30 @@ private:
     }
 };
 
+struct ImplT1haHash64
+{
+    static constexpr auto name = "t1haHash64";
+    using ReturnType = UInt64;
+
+    static UInt64 apply(const char * s, const size_t len)
+    {
+        return t1ha(s, len, 0);
+    }
+    static UInt64 combineHashes(UInt64 h1, UInt64 h2)
+    {
+        union
+        {
+            UInt64 u64[2];
+            char chars[16];
+        };
+        u64[0] = h1;
+        u64[1] = h2;
+        return apply(chars, 16);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
 struct ImplWyHash64
 {
     static constexpr auto name = "wyHash64";
@@ -1393,6 +1426,194 @@ struct ImplWyHash64
 
     static constexpr bool use_int_hash_for_pods = false;
 };
+struct ImplMeowHash128
+{
+    static constexpr auto name = "meowHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = MeowHash(MeowDefaultSeed, len, const_cast<char *>(s));
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+template <typename Result>
+void highwayhash(const char * s, size_t len, Result* result)
+{
+    using namespace highwayhash;
+    const HHKey key HH_ALIGNAS(32) = {1, 2, 3, 4};
+#ifdef __AVX2__
+    HHStateT<4> state(key);
+#elif defined(__SSE4_1__)
+    HHStateT<2> state(key);
+#else
+    HHStateT<1> state(key);
+#endif
+    HighwayHashT(&state, s, len, result);
+}
+
+struct ImplHighwayHash64
+{
+    static constexpr auto name = "highwayHash64";
+    using ReturnType = UInt64;
+
+    static UInt64 apply(const char *s, const size_t len)
+    {
+        UInt64 result;
+        highwayhash<highwayhash::HHResult64>(s, len, &result);  // actually, HHResult64 is UInt64
+        return result;
+    }
+
+    static UInt64 combineHashes(UInt64 h1, UInt64 h2)
+    {
+        union {
+            UInt64 u64[2];
+            char chars[16];
+        };
+        u64[0] = h1;
+        u64[1] = h2;
+        return apply(chars, 16);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+struct ImplHighwayHash128
+{
+    static constexpr auto name = "highwayHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+        union {
+            UInt64 u64[2];
+            UInt128 u128;
+        };
+        highwayhash<highwayhash::HHResult128>(s, len, &u64);  // actually, HHResult128 is UInt64[2]
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+struct ImplHighwayHash256
+{
+    static constexpr auto name = "highwayHash256";
+    using ReturnType = UInt256;
+
+    static UInt256 apply(const char *s, const size_t len)
+    {
+        union {
+            UInt64 u64[4];
+            UInt256 u256;
+        };
+        highwayhash<highwayhash::HHResult256>(s, len, &u64);  // actually, HHResult256 is UInt64[4]
+        return u256;
+    }
+
+    static UInt256 combineHashes(UInt256 h1, UInt256 h2)
+    {
+        union {
+            UInt256 u256[2];
+            char chars[64];
+        };
+        u256[0] = h1;
+        u256[1] = h2;
+        return apply(chars, 64);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+extern "C" uint32_t farsh (const void *data, size_t bytes, uint64_t seed);
+struct ImplFarshHash32
+{
+    static constexpr auto name = "farshHash32";
+    using ReturnType = UInt32;
+
+    static UInt32 apply(const char * s, const size_t len)
+    {
+        return farsh(s, len, 0);
+    }
+    static UInt32 combineHashes(UInt32 h1, UInt32 h2)
+    {
+        union
+        {
+            UInt64 u64;
+            char chars[8];
+        };
+        u64 = (static_cast<UInt64>(h1) << 32) + h2;
+        return apply(chars, 8);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+
+#if USE_AQUAHASH
+struct ImplAquaHash128
+{
+    static constexpr auto name = "aquaHash128";
+    using ReturnType = UInt128;
+
+    static UInt128 apply(const char *s, const size_t len)
+    {
+
+        if (!DB::Cpu::CpuFlagsCache::have_AES)
+        {
+            throw Exception("Aquahash is not available in system without AES", ErrorCodes::NOT_IMPLEMENTED);
+        }
+
+        union {
+            __m128i m128;
+            UInt128 u128;
+        };
+        m128 = AquaHash::Hash(reinterpret_cast<const uint8_t*>(s), len);
+        return u128;
+    }
+
+    static UInt128 combineHashes(UInt128 h1, UInt128 h2)
+    {
+        union {
+            UInt128 u128[2];
+            char chars[32];
+        };
+        u128[0] = h1;
+        u128[1] = h2;
+        return apply(chars, 32);
+    }
+
+    static constexpr bool use_int_hash_for_pods = false;
+};
+#endif
 
 struct NameIntHash32 { static constexpr auto name = "intHash32"; };
 struct NameIntHash64 { static constexpr auto name = "intHash64"; };
@@ -1430,6 +1651,15 @@ using FunctionHiveHash = FunctionAnyHash<HiveHashImpl>;
 using FunctionXxHash32 = FunctionAnyHash<ImplXxHash32>;
 using FunctionXxHash64 = FunctionAnyHash<ImplXxHash64>;
 
+using FunctionFarshHash32 = FunctionAnyHash<ImplFarshHash32>;
+using FunctionHighwayHash64 = FunctionAnyHash<ImplHighwayHash64>;
+using FunctionHighwayHash128 = FunctionAnyHash<ImplHighwayHash128>;
+using FunctionHighwayHash256 = FunctionAnyHash<ImplHighwayHash256>;
+using FunctionT1haHash64 = FunctionAnyHash<ImplT1haHash64>;
 using FunctionWyHash64 = FunctionAnyHash<ImplWyHash64>;
+#if USE_AQUAHASH
+using FunctionAquaHash128 = FunctionAnyHash<ImplAquaHash128>;
+#endif
+using FunctionMeowHash128 = FunctionAnyHash<ImplMeowHash128>;
 
 }

@@ -612,21 +612,21 @@ int main(int argc, char ** argv)
     if (!m || m == 7) bench<StringRef, wyHash64>(data, "StringRef_wyHash64");
     if (!m || m == 8) bench<StringRef, aquaHash128>(data, "StringRef_aquaHash128");
 
-//    if (!m || m == 1) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
-//    if (!m || m == 2) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
-//    if (!m || m == 3) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
-//    if (!m || m == 4) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
-//
-//#ifdef __SSE4_2__
-//    if (!m || m == 5) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
-//    if (!m || m == 6) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
-//    if (!m || m == 7) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
-//#endif
-//
-//    if (!m || m == 8) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
-//    if (!m || m == 9) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
-//    if (!m || m == 10) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
-//    if (!m || m == 11) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
+    if (!m || m == 9) bench<StringRef, StringRefHash64>(data, "StringRef_CityHash64");
+    if (!m || m == 10) bench<StringRef, FastHash64>     (data, "StringRef_FastHash64");
+    if (!m || m == 11) bench<StringRef, SimpleHash>     (data, "StringRef_SimpleHash");
+    if (!m || m == 12) bench<StringRef, FNV1a>          (data, "StringRef_FNV1a");
+
+#ifdef __SSE4_2__
+    if (!m || m == 13) bench<StringRef, CrapWow>        (data, "StringRef_CrapWow");
+    if (!m || m == 14) bench<StringRef, CRC32Hash>      (data, "StringRef_CRC32Hash");
+    if (!m || m == 15) bench<StringRef, CRC32ILPHash>   (data, "StringRef_CRC32ILPHash");
+#endif
+
+    if (!m || m == 16) bench<StringRef, VerySimpleHash> (data, "StringRef_VerySimpleHash");
+    if (!m || m == 17) bench<StringRef, FarmHash64>     (data, "StringRef_FarmHash64");
+    if (!m || m == 18) bench<StringRef, SMetroHash64<metrohash64_1>>(data, "StringRef_MetroHash64_1");
+    if (!m || m == 19) bench<StringRef, SMetroHash64<metrohash64_2>>(data, "StringRef_MetroHash64_2");
 
     return 0;
 }
